@@ -1,0 +1,186 @@
+{
+  "app_name": "CashPe",
+  "personality": "Fusion: 1 iOS-Native Clean structure with 4 Tactile/Playful colors and interactions",
+  "personality_one_liner": "A bright, trustworthy, and highly tactile Indian fintech super-app that turns every transaction into a celebratory, rewarding moment.",
+  "color": {
+    "surface": "#F9FAFB",
+    "onSurface": "#111827",
+    "surfaceSecondary": "#FFFFFF",
+    "onSurfaceSecondary": "#1F2937",
+    "surfaceTertiary": "#F3F4F6",
+    "onSurfaceTertiary": "#374151",
+    "surfaceInverse": "#1F2937",
+    "onSurfaceInverse": "#F9FAFB",
+    "brand": "#10B981",
+    "onBrand": "#FFFFFF",
+    "brandPrimary": "#10B981",
+    "onBrandPrimary": "#FFFFFF",
+    "brandSecondary": "#F59E0B",
+    "onBrandSecondary": "#FFFFFF",
+    "brandTertiary": "#D1FAE5",
+    "onBrandTertiary": "#047857",
+    "success": "#22C55E",
+    "onSuccess": "#FFFFFF",
+    "warning": "#F59E0B",
+    "onWarning": "#FFFFFF",
+    "error": "#EF4444",
+    "onError": "#FFFFFF",
+    "info": "#4B5563",
+    "onInfo": "#FFFFFF",
+    "border": "#E5E7EB",
+    "borderStrong": "#D1D5DB",
+    "divider": "#F3F4F6",
+    "muted": "#6B7280"
+  },
+  "typography": {
+    "displayFontFamily": "Plus Jakarta Sans",
+    "textFontFamily": "Plus Jakarta Sans",
+    "scale": {
+      "sm": 12,
+      "base": 14,
+      "lg": 16,
+      "xl": 20,
+      "2xl": 24
+    }
+  },
+  "spacing": {
+    "rule": "Generous touch targets (min 44x44pt). Avoid dense dashboards. Group content using iOS-native rhythm but with tactile, rounded components.",
+    "xs": 4,
+    "sm": 8,
+    "md": 12,
+    "lg": 16,
+    "xl": 24,
+    "2xl": 32,
+    "3xl": 48
+  },
+  "radius_tokens": {
+    "sm": 6,
+    "md": 12,
+    "lg": 20,
+    "pill": 999
+  },
+  "shadow_tier": "2",
+  "navigation": "bottom_tabs",
+  "icon_set": "Phosphor",
+  "glassmorphism": {
+    "enabled": true,
+    "do's": [
+      "Use frosted glass overlays on the Hero Wallet Balance card to make it feel premium.",
+      "Apply to sticky bottom action buttons (e.g., 'Pay Now') when content scrolls behind.",
+      "Use glassmorphic bottom navigation bars for a premium, uncluttered look."
+    ],
+    "dont's": [
+      "Do not apply glassmorphism to standard list items, form inputs, or dense utility screens.",
+      "Avoid glass on low-end Android fallback (use solid surfaceSecondary instead)."
+    ]
+  },
+  "platform_libraries": {
+    "glass": {
+      "ios": "expo-glass-effect",
+      "android": "expo-blur",
+      "low_end_android_fallback": "solid surfaceSecondary"
+    },
+    "image": "expo-image",
+    "blur": "expo-blur",
+    "bottom_sheet": "@gorhom/bottom-sheet",
+    "animation": "react-native-reanimated",
+    "gesture": "react-native-gesture-handler"
+  },
+  "screens": [
+    {
+      "name": "Login",
+      "purpose": "Mobile OTP login and 4-digit PIN setup.",
+      "states": {
+        "loading": "Centered spinner during OTP verification.",
+        "empty": "N/A",
+        "error": "Inline red helper text for invalid OTP/PIN."
+      },
+      "layout": "Bottom-heavy layout. Welcome text and large branding at the top. The mobile number input and 'Send OTP' CTA placed securely in the lower 1/3 thumb zone. Auto-focus on input."
+    },
+    {
+      "name": "Home Dashboard",
+      "purpose": "Primary landing showing Wallet Balance and quick access to all utility payment services.",
+      "states": {
+        "loading": "Skeleton loaders for wallet balance and service icons.",
+        "empty": "N/A",
+        "error": "Error state in wallet card with 'Tap to Retry'."
+      },
+      "layout": "Top section features a premium glassmorphic Hero Wallet card over a brand-tinted gradient. Below the hero card is a clean, modular 4-column grid for services (Mobile, DTH, Electricity, Broadband). High-frequency actions are visually distinct. Use 'brandTertiary' tinted rounded-square containers for service icons."
+    },
+    {
+      "name": "Operator/Biller Selection & Payment",
+      "purpose": "Select service provider, enter details, and complete payment (simulated).",
+      "states": {
+        "loading": "Spinner during bill fetch.",
+        "empty": "Illustration for 'No previous bills found'.",
+        "error": "Full screen error with 'Retry' CTA if bill fetch fails."
+      },
+      "layout": "List view for operators using real PNG logos (e.g., Jio, Airtel). Once selected, transition to a form screen (single column, labels above inputs). The 'Pay' CTA must be sticky at the bottom, reserving space for scrolling content."
+    },
+    {
+      "name": "Rewards / Scratch Card Reveal",
+      "purpose": "Celebratory scratch card interaction after a successful transaction.",
+      "states": {
+        "loading": "N/A",
+        "empty": "'No scratch cards yet' illustration (gift box).",
+        "error": "N/A"
+      },
+      "layout": "Full-screen modal or sheet. The scratch card is the hero element in the center. Requires React Native Gesture Handler for the scratching motion, revealing a bright 'Sunny Yellow/Gold' prize overlay. Trigger a Lottie celebration/confetti animation upon threshold reach (progress > 70%)."
+    },
+    {
+      "name": "Wallet & Transaction History",
+      "purpose": "Ledger of all past payments, cashback credits, and 'Add Money' functionality.",
+      "states": {
+        "loading": "Skeleton list rows.",
+        "empty": "Empty state illustration + 'No transactions yet'.",
+        "error": "Readable message + Retry button."
+      },
+      "layout": "Sticky header with current balance and 'Add Money' CTA. Below is a scrollable list of transactions. Each row uses a leading visual (brand icon or logo), title, date, and amount (green for +cashback, dark for -payment). Ensure generous 56pt height per row."
+    }
+  ],
+  "images": {
+    "jio_logo": {
+      "url": "https://images.pexels.com/photos/6200343/pexels-photo-6200343.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
+      "alt": "Reliance Jio logo"
+    },
+    "airtel_logo": {
+      "url": "https://images.pexels.com/photos/30661396/pexels-photo-30661396.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
+      "alt": "Bharti Airtel logo"
+    },
+    "vi_logo": {
+      "url": "https://images.unsplash.com/photo-1654573820453-0e4f4f931335?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjAzMzV8MHwxfHNlYXJjaHwxfHxWb2RhZm9uZSUyMElkZWElMjBWaSUyMGxvZ28lMjB0cmFuc3BhcmVudCUyMHBuZ3xlbnwwfHx8fDE3ODk4Mjc1ODV8MA&ixlib=rb-4.1.0&q=85",
+      "alt": "Vodafone Idea Vi logo"
+    },
+    "bsnl_logo": {
+      "url": "https://images.pexels.com/photos/6716962/pexels-photo-6716962.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
+      "alt": "BSNL logo"
+    },
+    "tata_play_logo": {
+      "url": "https://images.pexels.com/photos/6107344/pexels-photo-6107344.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
+      "alt": "Tata Play logo"
+    },
+    "rewards_coins_illustration": {
+      "url": "https://images.pexels.com/photos/12198523/pexels-photo-12198523.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
+      "alt": "Gold coins splash transparent 3d illustration"
+    },
+    "gift_box_illustration": {
+      "url": "https://images.pexels.com/photos/33629664/pexels-photo-33629664.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
+      "alt": "Gift box surprise 3d illustration"
+    }
+  },
+  "haptics": {
+    "pay_button_press": "impactMedium",
+    "otp_success": "notificationSuccess",
+    "scratch_card_reveal": "notificationSuccess",
+    "scratching_progress": "selection",
+    "tab_change": "selection"
+  },
+  "instructions_to_main_agent": [
+    "Strictly follow the color palette. Blue and Purple are heavily banned; rely on the provided Emerald Green (brand) and Amber (rewards) to drive the fintech super-app look.",
+    "Implement the 'Cashback for sure' requirement visually on the Rewards screen. Utilize React Native Gesture Handler to build an interactive scratch card that reveals the prize.",
+    "Ensure 'brandTertiary' (#D1FAE5) is used as the background for the services grid icon containers. This gives the tactile, playful aesthetic requested by the user.",
+    "The Hero Wallet Balance card on the Home screen must utilize a premium layout, ideally an expo-linear-gradient background or a frosted glass overlay (expo-blur).",
+    "Sticky buttons at the bottom of the screen (e.g., 'Pay Now' on forms) are mandatory when there is scrollable content above them. Avoid floating input labels; keep forms simple and single-column.",
+    "Research insight: Indian fintech apps thrive on clear visual hierarchy. Use the wallet balance as the hero element and surface high-frequency actions immediately below it without burying them in menus."
+  ]
+}
