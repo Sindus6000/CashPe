@@ -3,7 +3,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import { useQuery } from "@tanstack/react-query";
-import { Coins, Plus, ArrowRight, Sparkle, Gift, ArrowUp, ArrowDown } from "phosphor-react-native";
+import { Plus, ArrowRight, Sparkle, Gift, ArrowUp, ArrowDown, Bell, WarningCircle, Clock } from "phosphor-react-native";
 import { haptic } from "@/src/utils/haptics";
 
 import { api } from "@/src/api/client";
@@ -23,15 +23,20 @@ export default function Home() {
   const walletQ = useQuery({ queryKey: ["wallet"], queryFn: () => api.get("/wallet") });
   const txnQ = useQuery({ queryKey: ["transactions"], queryFn: () => api.get("/transactions") });
   const cardsQ = useQuery({ queryKey: ["scratchcards"], queryFn: () => api.get("/scratchcards") });
+  const remindersQ = useQuery({ queryKey: ["reminders"], queryFn: () => api.get("/reminders") });
 
   const refreshing = walletQ.isRefetching || txnQ.isRefetching || cardsQ.isRefetching;
   const onRefresh = () => {
     walletQ.refetch();
     txnQ.refetch();
     cardsQ.refetch();
+    remindersQ.refetch();
   };
 
   const unscratched = (cardsQ.data ?? []).filter((c: any) => !c.scratched);
+  const reminders = remindersQ.data ?? [];
+  const alerts = reminders.filter((r: any) => r.status !== "upcoming");
+  const alertCount = alerts.length;
   const recentTxns = (txnQ.data ?? []).slice(0, 4);
   const firstName = (user?.name ?? "").split(" ")[0] || "there";
 
@@ -49,9 +54,22 @@ export default function Home() {
               <Text style={styles.hi}>Hi, {firstName} 👋</Text>
               <Text style={styles.subHi}>Welcome back to CashPe</Text>
             </View>
-            <View style={styles.logoDot}>
-              <Coins size={22} color={colors.onBrand} weight="fill" />
-            </View>
+            <Pressable
+              testID="home-notifications-bell"
+              style={styles.bellBtn}
+              hitSlop={8}
+              onPress={() => {
+                haptic.select();
+                router.push("/notifications");
+              }}
+            >
+              <Bell size={22} color={colors.onBrand} weight="fill" />
+              {alertCount > 0 && (
+                <View style={styles.bellBadge} testID="notif-badge">
+                  <Text style={styles.bellBadgeText}>{alertCount > 9 ? "9+" : alertCount}</Text>
+                </View>
+              )}
+            </Pressable>
           </View>
 
           <View style={styles.balanceCard}>
@@ -95,6 +113,48 @@ export default function Home() {
             </Text>
           </View>
         </View>
+
+        {/* Expiring soon reminders */}
+        {alerts.length > 0 && (
+          <>
+            <View style={styles.sectionRow}>
+              <Text style={styles.sectionTitle}>Expiring soon ⏰</Text>
+              <Pressable testID="home-see-reminders" onPress={() => router.push("/notifications")}>
+                <Text style={styles.seeAll}>View all</Text>
+              </Pressable>
+            </View>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.cardRow}>
+              {alerts.slice(0, 6).map((r: any) => {
+                const expired = r.status === "expired";
+                const c = expired ? colors.error : colors.warning;
+                const label = expired
+                  ? `Expired ${Math.abs(r.days_left)}d ago`
+                  : r.status === "today"
+                    ? "Expires today"
+                    : `${r.days_left}d left`;
+                return (
+                  <Pressable
+                    key={r.id}
+                    testID={`home-reminder-${r.id}`}
+                    style={styles.reminderCard}
+                    onPress={() => router.push("/notifications")}
+                  >
+                    <View style={[styles.reminderIcon, { backgroundColor: c + "1A" }]}>
+                      {expired ? (
+                        <WarningCircle size={18} color={c} weight="fill" />
+                      ) : (
+                        <Clock size={18} color={c} weight="fill" />
+                      )}
+                    </View>
+                    <Text style={styles.reminderOp} numberOfLines={1}>{r.operator}</Text>
+                    <Text style={styles.reminderAcc} numberOfLines={1}>{r.account}</Text>
+                    <Text style={[styles.reminderDays, { color: c }]}>{label}</Text>
+                  </Pressable>
+                );
+              })}
+            </ScrollView>
+          </>
+        )}
 
         {/* Services grid */}
         <Text style={styles.sectionTitle}>Pay & Recharge</Text>
@@ -208,7 +268,7 @@ const useStyles = makeStyles((colors) => ({
   headerRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
   hi: { color: colors.onBrand, fontSize: 22, fontWeight: "900" },
   subHi: { color: colors.onBrand, opacity: 0.85, fontSize: 13, marginTop: 2 },
-  logoDot: {
+  bellBtn: {
     width: 44,
     height: 44,
     borderRadius: 14,
@@ -216,6 +276,21 @@ const useStyles = makeStyles((colors) => ({
     alignItems: "center",
     justifyContent: "center",
   },
+  bellBadge: {
+    position: "absolute",
+    top: 4,
+    right: 4,
+    minWidth: 18,
+    height: 18,
+    borderRadius: 9,
+    paddingHorizontal: 4,
+    backgroundColor: colors.error,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1.5,
+    borderColor: colors.brandDeep,
+  },
+  bellBadgeText: { color: "#FFFFFF", fontSize: 10, fontWeight: "900" },
   balanceCard: {
     marginTop: spacing.xl,
     backgroundColor: "rgba(255,255,255,0.16)",
@@ -297,6 +372,25 @@ const useStyles = makeStyles((colors) => ({
   gridLabel: { fontSize: 13, fontWeight: "800", color: colors.onSurface, marginTop: spacing.sm },
   gridSub: { fontSize: 10.5, color: colors.muted, marginTop: 1 },
   cardRow: { paddingHorizontal: spacing.xl, gap: spacing.md, paddingTop: spacing.md },
+  reminderCard: {
+    width: 132,
+    backgroundColor: colors.surfaceSecondary,
+    borderRadius: 16,
+    padding: spacing.md,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  reminderIcon: {
+    width: 34,
+    height: 34,
+    borderRadius: 11,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: spacing.sm,
+  },
+  reminderOp: { fontSize: 13.5, fontWeight: "800", color: colors.onSurface },
+  reminderAcc: { fontSize: 11.5, color: colors.muted, marginTop: 1 },
+  reminderDays: { fontSize: 12, fontWeight: "800", marginTop: spacing.sm },
   miniCard: { borderRadius: 18, overflow: "hidden" },
   miniCardInner: {
     width: 104,

@@ -119,3 +119,21 @@ export function plansFor(type: ServiceType): Plan[] {
   if (type === "dth") return DTH_PLANS;
   return [];
 }
+
+// Convert a plan validity label like "28 days" / "3 months" / "1 year" to days.
+export function validityToDays(validity: string): number {
+  const m = validity.match(/(\d+)\s*(day|month|year)/i);
+  if (!m) return 28;
+  const n = parseInt(m[1], 10);
+  const unit = m[2].toLowerCase();
+  if (unit.startsWith("month")) return n * 30;
+  if (unit.startsWith("year")) return n * 365;
+  return n;
+}
+
+// Default expiry window per service when no explicit plan validity is chosen.
+export function defaultValidity(type: ServiceType): { days: number; label: string } {
+  if (type === "mobile") return { days: 28, label: "28 days validity" };
+  if (type === "dth") return { days: 30, label: "1 month validity" };
+  return { days: 30, label: "Next bill in ~30 days" }; // electricity / broadband
+}

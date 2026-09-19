@@ -10,7 +10,7 @@ import { haptic } from "@/src/utils/haptics";
 import { api } from "@/src/api/client";
 import { queryClient } from "@/src/query-client";
 import { useAuth } from "@/src/auth/auth-context";
-import { SERVICES, OPERATORS, plansFor, type ServiceType } from "@/src/constants/catalog";
+import { SERVICES, OPERATORS, plansFor, validityToDays, defaultValidity, type ServiceType } from "@/src/constants/catalog";
 import { OperatorAvatar, ServiceIcon } from "@/src/components/service-visuals";
 import { GradientButton } from "@/src/components/gradient-button";
 import { rupee } from "@/src/utils/format";
@@ -22,14 +22,15 @@ export default function ServiceScreen() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { user } = useAuth();
-  const { type } = useLocalSearchParams<{ type: ServiceType }>();
+  const { type, account: accountParam, operatorId: operatorParam } =
+    useLocalSearchParams<{ type: ServiceType; account?: string; operatorId?: string }>();
 
   const service = SERVICES.find((s) => s.type === type) ?? SERVICES[0];
   const operators = OPERATORS[service.type];
   const plans = plansFor(service.type);
 
-  const [operatorId, setOperatorId] = useState<string | null>(null);
-  const [account, setAccount] = useState("");
+  const [operatorId, setOperatorId] = useState<string | null>(operatorParam ?? null);
+  const [account, setAccount] = useState(accountParam ?? "");
   const [planIndex, setPlanIndex] = useState<number | null>(null);
   const [customAmount, setCustomAmount] = useState("");
   const [bill, setBill] = useState<any>(null);
@@ -65,6 +66,7 @@ export default function ServiceScreen() {
       queryClient.invalidateQueries({ queryKey: ["transactions"] });
       queryClient.invalidateQueries({ queryKey: ["scratchcards"] });
       queryClient.invalidateQueries({ queryKey: ["b2b-master"] });
+      queryClient.invalidateQueries({ queryKey: ["reminders"] });
       setPinModal(false);
       setPin("");
       router.replace({ pathname: "/scratch/[id]", params: { id: data.scratch_card_id } });
@@ -81,6 +83,16 @@ export default function ServiceScreen() {
 
   const doPay = (enteredPin?: string) => {
     setError("");
+    let validity_days: number;
+    let validity_label: string;
+    if (service.hasPlans && planIndex !== null) {
+      validity_days = validityToDays(plans[planIndex].validity);
+      validity_label = `${plans[planIndex].validity} validity`;
+    } else {
+      const d = defaultValidity(service.type);
+      validity_days = d.days;
+      validity_label = d.label;
+    }
     pay.mutate({
       service_type: service.type,
       operator: operator?.name,
@@ -92,6 +104,8 @@ export default function ServiceScreen() {
           : `${operator?.name} ${service.needsBillFetch ? "bill" : "recharge"}`,
       payment_method: method,
       pin: enteredPin,
+      validity_days,
+      validity_label,
     });
   };
 

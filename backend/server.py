@@ -145,6 +145,8 @@ class PayIn(BaseModel):
     plan_label: Optional[str] = None
     payment_method: str = Field(default="cashfree")  # 'cashfree' | 'wallet'
     pin: Optional[str] = None
+    validity_days: Optional[int] = None
+    validity_label: Optional[str] = None
 
 # ----------------------------------------------------------------------------
 # Health
@@ -292,6 +294,9 @@ async def pay(body: PayIn, user=Depends(current_user)):
     # Successful transaction (simulated B2B recharge success)
     txn_id = str(uuid.uuid4())
     label = body.plan_label or f"{body.operator} payment"
+    expiry_date = None
+    if body.validity_days and body.validity_days > 0:
+        expiry_date = iso(now_utc() + timedelta(days=body.validity_days))
     txn = {
         "id": txn_id, "user_id": user["id"], "type": "debit",
         "category": body.service_type, "title": label,
@@ -299,6 +304,8 @@ async def pay(body: PayIn, user=Depends(current_user)):
         "account": body.account, "amount": round(body.amount, 2),
         "status": "success", "payment_method": body.payment_method,
         "cashback": 0.0, "created_at": iso(now_utc()),
+        "expiry_date": expiry_date, "validity_label": body.validity_label,
+        "reminder_dismissed": False,
     }
     await transactions.insert_one(txn)
 
@@ -327,6 +334,62 @@ async def list_transactions(user=Depends(current_user)):
     for it in items:
         it.pop("_id", None)
     return items
+
+# ----------------------------------------------------------------------------
+# Recharge / bill expiry reminders (in-app alerts)
+# ----------------------------------------------------------------------------
+@api_router.get("/reminders")
+async def get_reminders(user=Depends(current_user)):
+    cursor = transactions.find({
+        "user_id": user["id"],
+        "type": "debit",
+        "expiry_date": {"$ne": None},
+        "reminder_dismissed": {"$ne": True},
+    }).sort("created_at", -1)
+    items = await cursor.to_list(500)
+    today = now_utc().date()
+    seen = set()
+    result = []
+    for it in items:
+        if not it.get("expiry_date"):
+            continue
+        key = (it.get("service_type"), it.get("account"))
+        if key in seen:
+            continue
+        seen.add(key)
+        exp = datetime.fromisoformat(it["expiry_date"]).date()
+        days_left = (exp - today).days
+        if days_left < 0:
+            status = "expired"
+        elif days_left == 0:
+            status = "today"
+        elif days_left <= 3:
+            status = "expiring"
+        else:
+            status = "upcoming"
+        result.append({
+            "id": it["id"],
+            "service_type": it.get("service_type"),
+            "operator": it.get("operator"),
+            "account": it.get("account"),
+            "amount": it.get("amount"),
+            "expiry_date": it["expiry_date"],
+            "days_left": days_left,
+            "status": status,
+            "validity_label": it.get("validity_label"),
+            "title": it.get("title"),
+        })
+    result.sort(key=lambda r: r["expiry_date"])
+    return result
+
+@api_router.post("/reminders/{txn_id}/dismiss")
+async def dismiss_reminder(txn_id: str, user=Depends(current_user)):
+    res = await transactions.update_one(
+        {"id": txn_id, "user_id": user["id"]},
+        {"$set": {"reminder_dismissed": True}})
+    if res.matched_count == 0:
+        raise HTTPException(404, "Reminder not found")
+    return {"ok": True}
 
 # ----------------------------------------------------------------------------
 # Scratch cards
