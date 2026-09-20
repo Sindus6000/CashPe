@@ -542,3 +542,32 @@ async def process_bill_payment(request_data: dict):
 
     except Exception as error:
         return {"success": False, "error": str(error)}
+import asyncio
+from fastapi import FastAPI, HTTPException, status
+from pydantic import BaseModel, Field
+
+app = FastAPI(title="CashPe High-Concurrency Backend", version="1.4.0")
+
+class RechargeRequest(BaseModel):
+    mobile_number: str = Field(..., min_length=10, max_length=10)
+    amount: float = Field(..., gt=0, description="అమౌంట్ 0 కంటే ఎక్కువగా ఉండాలి")
+
+@app.post("/api/recharge")
+async def process_recharge(data: RechargeRequest):
+    try:
+        await asyncio.sleep(3.0)
+        return {
+            "status": "success",
+            "message": f"మొబైల్ నంబర్ {data.mobile_number} కి రూ. {data.amount} రీచార్జ్ విజయవంతంగా పూర్తయింది!"
+        }
+    except HTTPException as he:
+        raise he
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="సర్వర్ బిజీగా ఉంది, దయచేసి మళ్లీ ప్రయత్నించండి."
+        )
+
+@app.get("/health")
+def health_check():
+    return {"status": "active", "system": "running smoothly"}
