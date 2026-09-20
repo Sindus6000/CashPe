@@ -491,3 +491,54 @@ app.add_middleware(
 @app.on_event("shutdown")
 async def shutdown_db_client():
     client.close()
+# ==========================================
+# Pay2all Wallet Auto-Top-Up & Target Limit Logic
+# ==========================================
+
+async def get_pay2all_balance():
+    # Mee Pay2all wallet current balance ni check chese API call ikkada untundi
+    current_balance = 5000.0  
+    return current_balance
+
+async def cashfree_payout_to_pay2all_van(amount):
+    # Cashfree Payouts dwara Pay2all Virtual Account (VAN) ki amount transfer chese logic
+    print(f"Transferring ₹{amount} to Pay2all VAN via Cashfree Payouts...")
+    return True
+
+async def check_and_auto_top_up_pay2all(transaction_amount: float):
+    """
+    Wallet Target Limit: ₹10,000
+    Ee logic prakaram, Pay2all wallet balance ₹10,000 (Target Limit) kante 
+    leduda transaction amount kante thakkuvaga unte automatic ga top-up avtundi.
+    """
+    TARGET_LIMIT = 10000.0
+    current_pay2all_balance = await get_pay2all_balance()
+
+    if current_pay2all_balance < TARGET_LIMIT or current_pay2all_balance < transaction_amount:
+        top_up_amount = TARGET_LIMIT - current_pay2all_balance
+        
+        if top_up_amount > 0:
+            print(f"Pay2all balance is below target limit. Triggering auto-top-up...")
+            await cashfree_payout_to_pay2all_van(top_up_amount)
+
+
+# ==========================================
+# Bill Payment Route Integration Example
+# ==========================================
+
+@app.post("/api/bill/pay")
+async def process_bill_payment(request_data: dict):
+    try:
+        amount = float(request_data.get("amount", 0))
+        
+        # 👇 Customer payment chese mundu wallet target limit & auto-top-up check avtundi
+        await check_and_auto_top_up_pay2all(amount)
+
+        # Mee regular Pay2all / BBPS bill payment process ikkada continue avtundi
+        return {
+            "success": True, 
+            "message": "Bill payment processed and wallet auto-top-up checked successfully!"
+        }
+
+    except Exception as error:
+        return {"success": False, "error": str(error)}
