@@ -14,6 +14,15 @@ import { rupee, shortDateTime } from "@/src/utils/format";
 import { makeStyles, useTheme, spacing } from "@/src/theme";
 
 export default function Home() {
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleRecharge = async () => {
+      setIsLoading(true);
+      try {
+          await new Promise(resolve => setTimeout(resolve, 3000)); // 3 సెకన్ల టైమర్
+      } finally {
+          setIsLoading(false);
+  };
   const styles = useStyles();
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
